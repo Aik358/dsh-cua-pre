@@ -1,0 +1,6 @@
+# dsh-cua-pre bundle patch: inserts the host-only plugin row into the web
+# profile roster (same mechanism as dsh-auto-memory). This prototype ships no
+# browser half: all tools run in the host process and are invoked from chat.
+- insert:
+    - id: cua-host-pre
+      name: '@a9i5k4/dsh-cua-pre'

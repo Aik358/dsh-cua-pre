@@ -1,0 +1,49 @@
+{
+  "name": "@a9i5k4/dsh-cua-pre",
+  "description": "DSH 电脑控制插件（对齐 zcode-cua）：无障碍树观察优先的桌面自动化 + 对话卡片/侧栏面板/设置页 + 分块裁切视觉识图，Python sidecar 执行原语。默认关闭，需在 ~/.dsh/cua-pre.json 显式启用。",
+  "version": "0.3.1",
+  "private": false,
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "python",
+    "!python/__pycache__",
+    "!python/*.pyc",
+    "!python/worker_cua_v1.py",
+    "cordis.patch.yml",
+    "LICENSE",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ],
+      "platform": "web"
+    }
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "cua",
+    "computer-use",
+    "uia",
+    "vision"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "license": "MIT"
+}

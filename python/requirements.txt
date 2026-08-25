@@ -1,0 +1,4 @@
+# dsh-cua-pre Python sidecar 依赖（原型）
+# 安装到项目 venv： .venv/Scripts/pip install -r python/requirements.txt
+uiautomation>=2.0.18
+pillow>=10.0.0
