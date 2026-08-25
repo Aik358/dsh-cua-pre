@@ -5,7 +5,7 @@
  *   3. settings.section      — 「电脑控制」设置页(基础 / 视觉识图 / 安全)
  * Data flows over /api/dsh-cua-pre/* (loopback-only host routes).
  */
-console.log('[dsh-cua-pre] client v0.3.4 loading')
+console.log('[dsh-cua-pre] client v0.3.3 loading')
 window.__ModuleLoader__.load({
   id: '@a9i5k4/dsh-cua-pre',
   factory: (require) => {
@@ -296,124 +296,67 @@ window.__ModuleLoader__.load({
     }
 
     // ───────────────────────── apply ─────────────────────────
-    // 不依赖第三方侧栏的任何槽；悬浮按钮 + 独立面板全部直挂 document.body（fixed）。
+    // 侧栏为第三方包，footer 槽会挤占布局；改为右下角独立悬浮按钮（fixed）+ overlay 面板。
+    // 注意：overlay 槽在 shell 内渲染，FAB 在独立层；点击 FAB 后需要强制触发 overlay 重渲染。
     function apply(ctx) {
       var slots = ctx.slots
 
       try {
-        // 只有一个设置面（官方）——不碰任何第三方侧栏。
+        var overlayReRender = null
+        // FAB 外渲染的 overlay，需要在按钮点击后显式触发宿主回调重渲染。
+        // 宿主不保证 slots 回调被自动重渲染，因此加一层 DOM 层面板作为兜底（双保险）。
+        var fallbackPanelRoot = null
+        function ensureFallbackPanel() {
+          if (fallbackPanelRoot && document.getElementById('cua-fallback-panel')) return
+          var m = document.getElementById('cua-fallback-panel')
+          if (!m) {
+            m = document.createElement('div')
+            m.id = 'cua-fallback-panel'
+            m.style.cssText = 'position:fixed;right:16px;bottom:152px;z-index:9997;display:none;'
+            document.body.appendChild(m)
+          }
+          fallbackPanelRoot = m
+          syncPanelDOM()
+        }
+        function syncPanelDOM() {
+          if (!fallbackPanelRoot) return
+          try {
+            if (uiOpen) {
+              fallbackPanelRoot.style.display = 'block'
+              fallbackPanelRoot.style.pointerEvents = 'auto'
+              fallbackPanelRoot.style.opacity = '1'
+            } else {
+              fallbackPanelRoot.style.display = 'none'
+              fallbackPanelRoot.style.opacity = '0'
+              fallbackPanelRoot.style.pointerEvents = 'none'
+            }
+          } catch (_) {}
+          try { if (overlayReRender) overlayReRender() } catch (_) {}
+        }
+        uiListeners.add(function () {
+          syncPanelDOM()
+          try { if (overlayReRender) overlayReRender() } catch (_) {}
+        })
+
+        slots.inject('shell.overlay', function () {
+          return slots.register({ name: 'shell.overlay', id: 'cua-host-pre', order: 6 }, function () {
+            // 捕获宿主回调内的 re-render 触发器（若宿主支持 props.rerender 等则透传）
+            try {
+              var _tick = renderTick
+              overlayReRender = null
+              return h(CuaPanel, { _tick: _tick, onClose: function () { setPanelOpen(false) } })
+            } catch (_) {
+              return h(CuaPanel, { onClose: function () { setPanelOpen(false) } })
+            }
+          })
+        })
         slots.inject('settings.section', function () {
           return slots.register({ name: 'settings.section', id: 'cua-host-pre', order: 26, label: '电脑控制' }, function () {
             return h(SettingsPage, null)
           })
         })
 
-        // ====== 独立面板（固定在右下角 FAB 上方） ======
-        var panelRoot = null
-        var panelLoaded = false
-        function ensurePanelRoot() {
-          var m = document.getElementById('cua-panel-root')
-          if (m) { panelRoot = m; return m }
-          m = document.createElement('div')
-          m.id = 'cua-panel-root'
-          m.style.cssText =
-            'position:fixed;right:16px;bottom:152px;z-index:9997;' +
-            'width:420px;max-width:calc(100vw - 32px);max-height:min(72vh,640px);' +
-            'display:none;flex-direction:column;overflow:hidden;' +
-            'border-radius:16px;border:1px solid rgba(255,255,255,0.16);' +
-            'background:rgba(22,26,34,0.96);backdrop-filter:blur(18px) saturate(1.2);' +
-            'box-shadow:0 16px 48px rgba(0,0,0,0.45);color:#e8eaf0;'
-          var header = document.createElement('div')
-          header.style.cssText =
-            'display:flex;align-items:center;gap:8px;padding:10px 12px;' +
-            'border-bottom:1px solid rgba(255,255,255,0.1);font-weight:700;font-size:13px;'
-          var title = document.createElement('span'); title.textContent = '🖥️ 电脑控制'; header.appendChild(title)
-          var badge = document.createElement('span'); badge.textContent = 'zcode-cua 对齐版'
-          badge.style.cssText = 'opacity:.6;font-size:11px;font-weight:500;'; header.appendChild(badge)
-          var sp = document.createElement('span'); sp.style.cssText = 'flex:1'; header.appendChild(sp)
-          var closeBtn = document.createElement('button')
-          closeBtn.textContent = '✕'
-          closeBtn.style.cssText = 'background:transparent;border:0;color:inherit;opacity:.7;cursor:pointer;font-size:18px;'
-          closeBtn.onclick = function () { setPanelOpen(false) }
-          header.appendChild(closeBtn)
-          m.appendChild(header)
-
-          var tabs = document.createElement('div')
-          tabs.style.cssText = 'display:flex;gap:6px;padding:8px 10px 0;'
-          var tabLive = document.createElement('button'); tabLive.textContent = '实况'
-          var tabFrames = document.createElement('button'); tabFrames.textContent = '画面'
-          ;[tabLive, tabFrames].forEach(function (b) {
-            b.style.cssText='flex:1;padding:6px 0;border:0;border-radius:999px;cursor:pointer;font-size:12px;background:rgba(255,255,255,0.1);color:#e8eaf0;'
-          })
-          tabs.appendChild(tabLive); tabs.appendChild(tabFrames); m.appendChild(tabs)
-
-          var body = document.createElement('div')
-          body.id = 'cua-panel-body'
-          body.style.cssText = 'padding:10px 14px 14px;font-size:12px;line-height:1.6;overflow:auto;white-space:pre-wrap;word-break:break-word;max-height:360px;'
-          m.appendChild(body)
-
-          function setBody(text) {
-            body.textContent = ''
-            var pre = document.createElement('pre')
-            pre.style.cssText = 'margin:0;white-space:pre-wrap;word-break:break-all;font:12px/1.6 system-ui;'
-            pre.textContent = text
-            body.appendChild(pre)
-          }
-          function syncTab(active) {
-            ;[tabLive, tabFrames].forEach(function (b) { b.style.background='rgba(255,255,255,0.1)'; b.style.fontWeight='500' })
-            ;(active==='frames'?tabFrames:tabLive).style.background='rgba(121,192,255,0.24)'
-            ;(active==='frames'?tabFrames:tabLive).style.fontWeight='700'
-          }
-          function loadLive() {
-            syncTab('live'); setBody('加载中…')
-            apiGet(API.state).then(function (s) {
-              var ops = (s && s.lastOps) || []
-              var lines = []
-              lines.push('[状态] enabled=' + (s.enabled?'是':'否') + '  stopped=' + (s.stoppedByUser?'是':'否') + '  vision=' + (s.visionEnabled?'开':'关'))
-              lines.push('[worker] ' + JSON.stringify(s.worker||{}, null, 2))
-              lines.push('')
-              lines.push('—— 最近操作（新→旧）——')
-              if (!ops.length) lines.push('(暂无)')
-              else ops.forEach(function (o) { lines.push((o.ok?'✓':'✗')+' ['+o.tool+'] '+o.title+'  '+(o.brief||'') + '  '+o.ms+'ms') })
-              setBody(lines.join('\n'))
-            }).catch(function (e) { setBody('读取失败: ' + (e.message||e)) })
-          }
-          function loadFrames() {
-            syncTab('frames'); setBody('加载中…')
-            apiGet(API.frames).then(function (s) {
-              var frames = (s && s.frames) || []
-              if (!frames.length) { setBody('(暂无画面帧)\n模型执行 screenshot 或 get_app_state(include_screenshot) 后出现。'); return }
-              setBody('共 ' + frames.length + ' 帧（新→旧）：\n' + frames.map(function (f) {
-                return '- ' + f.frame_id + '  ' + f.width + 'x' + f.height + '  crop=' + (f.crop||'-') + '  ' + (f.expired?'过期':'有效')
-                  + (f.vision_description ? ('\n  [vision] ' + f.vision_description.slice(0,240)) : '')
-              }).join('\n'))
-            }).catch(function (e) { setBody('读取失败: ' + (e.message||e)) })
-          }
-          tabLive.onclick = loadLive
-          tabFrames.onclick = loadFrames
-          loadLive()
-
-          // 暴露给 setPanelVisible 按需刷新
-          try { m._loadLive = loadLive } catch (_) {}
-
-          document.body.appendChild(m)
-          panelRoot = m
-          return m
-        }
-
-        function setPanelVisible(show) {
-          if (!panelRoot) ensurePanelRoot()
-          if (!panelRoot) return
-          panelRoot.style.display = show ? 'flex' : 'none'
-          if (show) {
-            try { if (panelRoot._loadLive) panelRoot._loadLive() } catch (_) {}
-          }
-        }
-        ensurePanelRoot()
-        uiListeners.add(function () { setPanelVisible(uiOpen) })
-        setPanelVisible(uiOpen)
-
-        // ====== 悬浮按钮（独立 FAB，直接操作 uiOpen，不走任何侧栏槽） ======
+        // 悬浮按钮：直接 DOM 挂载，不进 sidebar 槽（避免挤占 footer）
         var fabRoot = null
         function ensureFAB() {
           if (fabRoot && document.getElementById('cua-fab-root')) return
@@ -422,7 +365,6 @@ window.__ModuleLoader__.load({
             mount = document.createElement('div')
             mount.id = 'cua-fab-root'
             mount.style.cssText = 'position:fixed;right:16px;bottom:96px;z-index:9998;'
-            // 不使用内联 round 样式：背景给按钮本身
             document.body.appendChild(mount)
           }
           fabRoot = mount
@@ -442,11 +384,11 @@ window.__ModuleLoader__.load({
             'color:' + (open ? '#0b1220' : '#e8eaf0') + ';font-size:18px;' +
             'display:flex;align-items:center;justify-content:center;'
           btn.onclick = function () {
-            // 直接翻转状态，面板由 DOM setPanelVisible 显示/隐藏（不在 overlay 槽里）
-            var next = !uiOpen
-            setPanelOpen(next)
-            setPanelVisible(next)
+            setPanelOpen(!uiOpen)
             renderFAB(false)
+            syncPanelDOM()
+            // 尽量触发 overlay 槽的重渲染（不同壳可能不自动刷新）
+            try { if (overlayReRender) overlayReRender() } catch (_) {}
           }
           fabRoot.appendChild(btn)
           if (!silent && !open && !document.getElementById('cua-fab-tip')) {
@@ -463,19 +405,21 @@ window.__ModuleLoader__.load({
           }
         }
         ensureFAB()
-        setTimeout(ensureFAB, 1200)
-        uiListeners.add(function () { renderFAB(false) })
+        ensureFallbackPanel()
+        setTimeout(function () { ensureFAB(); ensureFallbackPanel() }, 1200)
+        // 面板开关时同步按钮外观
+        uiListeners.add(function () { renderFAB(false); syncPanelDOM() })
         if (document.readyState !== 'complete') {
-          document.addEventListener('DOMContentLoaded', function () { ensureFAB() })
+          document.addEventListener('DOMContentLoaded', function () { ensureFAB(); ensureFallbackPanel() })
         }
 
-        console.log('[dsh-cua-pre] client ready: floating FAB + fixed panel + settings page')
+        console.log('[dsh-cua-pre] client ready: floating FAB + overlay panel + settings page')
       } catch (e) {
         console.warn('[dsh-cua-pre] slot registration failed', e)
       }
     }
 
-    // 面板自给自足，不再依赖 shell.overlay 的宿主重渲染。
+    // overlay 面板常驻挂载、内部 useUiOpen 自隐。
 
     exports.inject = ['slots']
     exports.apply = apply
