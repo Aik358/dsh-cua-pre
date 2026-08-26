@@ -179,9 +179,10 @@ def _ensure_pil():
         from PIL import Image, ImageGrab
         _deps['pil'] = (Image, ImageGrab)
         return _deps['pil']
-    except Exception:
+    except Exception as e:
         _deps['pil'] = None
-        raise DepMissing('Pillow')
+        # 带上原始异常：cp314 wheel 装到 cp313 解释器这类错装会在这里暴露
+        raise DepMissing('Pillow [' + type(e).__name__ + ': ' + str(e)[:160] + ']')
 
 
 # ---------------------------------------------------------------------------
@@ -910,11 +911,14 @@ def element_action(sel, path, action='click', value=None, expect_t=None, expect_
         return {'ok': True, 'strategy': used, 'point': [cx, cy], 'rect': rect}
     if action in ('setvalue', 'set_value'):
         text = '' if value is None else str(value)
-        try:
-            ctrl.GetValuePattern().SetValue(text)
-            return {'ok': True, 'strategy': ['semantic:valuepattern']}
-        except Exception:
-            pass
+        # Document（多行文档）控件禁用 ValuePattern：SetValue 会整体替换全部内容，
+        # 且超长文档曾致 provider 崩溃——一律走插入语义。
+        if _short_type(ctrl).lower() != 'document':
+            try:
+                ctrl.GetValuePattern().SetValue(text)
+                return {'ok': True, 'strategy': ['semantic:valuepattern']}
+            except Exception:
+                pass
         cx, cy, rect = element_center(ctrl)
         try:
             ctrl.SetFocus()
@@ -923,6 +927,16 @@ def element_action(sel, path, action='click', value=None, expect_t=None, expect_
         mouse_click(cx, cy)
         type_text(text)
         return {'ok': True, 'strategy': ['focus+unicode'], 'point': [cx, cy]}
+    if action == 'typetext':
+        text = '' if value is None else str(value)
+        try:
+            ctrl.SetFocus()
+        except Exception:
+            pass
+        cx, cy, rect = element_center(ctrl)
+        mouse_click(cx, cy)  # 光标落点=插入点
+        type_text(text)
+        return {'ok': True, 'strategy': ['focus+click+unicode'], 'point': [cx, cy]}
     if action == 'focus':
         try:
             ctrl.SetFocus()
@@ -1227,6 +1241,13 @@ def _write(obj):
 
 
 def main():
+    # [patch 2026-08-26] 中文 Windows 下 sys.stdin 默认 GBK，宿主发来的 UTF-8 JSON 帧
+    # 里的中文元素名会被解码成乱码，导致 name drifted 误报。强制 UTF-8。
+    try:
+        sys.stdin.reconfigure(encoding='utf-8', errors='replace')
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
     ap = argparse.ArgumentParser()
     ap.add_argument('--expect-epoch', required=True)
     args = ap.parse_args()
