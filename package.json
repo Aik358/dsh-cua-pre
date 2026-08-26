@@ -1,7 +1,7 @@
 {
   "name": "@a9i5k4/dsh-cua-pre",
   "description": "DSH 电脑控制插件（对齐 zcode-cua）：无障碍树观察优先的桌面自动化 + 对话卡片/侧栏面板/设置页 + 分块裁切视觉识图，Python sidecar 执行原语。默认关闭，需在 ~/.dsh/cua-pre.json 显式启用。",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": false,
   "type": "module",
   "main": "lib/index.js",
