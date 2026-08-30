@@ -9,7 +9,7 @@
   </defs>
   <rect width="920" height="560" fill="#0f1420"/>
   <text x="24" y="40" fill="#e8eaf0" font-size="20" font-weight="700">dsh-cua-pre · architecture / 架构</text>
-  <text x="24" y="62" fill="#8b95a5" font-size="12">parity with zcode-cua: 30 same-named tools · accessibility-first · safety semantics preserved</text>
+  <text x="24" y="62" fill="#8b95a5" font-size="12">accessibility-first desktop automation · 30 standard tools · safety semantics built-in</text>
 
   <!-- Layer 1: browser -->
   <rect x="24" y="84" width="420" height="120" rx="10" fill="#182030" stroke="#2c3a52"/>
@@ -22,7 +22,7 @@
   <!-- Layer 2: host -->
   <rect x="476" y="84" width="420" height="120" rx="10" fill="#182030" stroke="#2c3a52"/>
   <text x="492" y="110" fill="#9fc2ff" font-size="13" font-weight="700">Host half · lib/index.js (cordis)</text>
-  <text x="492" y="130" fill="#c6cfdb" font-size="11">30 tools (zcode-cua 同名) → ctx.tools.register</text>
+  <text x="492" y="130" fill="#c6cfdb" font-size="11">30 tools (标准电脑控制) → ctx.tools.register</text>
   <text x="492" y="148" fill="#c6cfdb" font-size="11">cua-session-pre: state_id LRU · superseded · refresh 锁 · 帧注册表(TTL)</text>
   <text x="492" y="166" fill="#c6cfdb" font-size="11">cua-vision-pre: planTiles 分块 → attachments.saveImage → subagent VLM</text>
   <text x="492" y="188" fill="#8b95a5" font-size="11">审计 JSONL 落盘 · pid 白名单 · runtime overrides 即时生效</text>
@@ -52,7 +52,7 @@
 
   <!-- safety band -->
   <rect x="24" y="412" width="872" height="118" rx="10" fill="#131a2a" stroke="#3a2c52"/>
-  <text x="40" y="438" fill="#ffb86c" font-size="13" font-weight="700">Safety semantics · 从 zcode-cua 移植</text>
+  <text x="40" y="438" fill="#ffb86c" font-size="13" font-weight="700">Safety semantics · 内建安全语义</text>
   <text x="40" y="460" fill="#c6cfdb" font-size="11.5">① 默认关闭（enabled 门禁）　② stop_computer_control 持久 kill switch　③ 写后旧观察 superseded + refresh_required 写锁</text>
   <text x="40" y="480" fill="#c6cfdb" font-size="11.5">④ timeout/crashed = 「可能已发生」→ 禁止重放非幂等操作　⑤ 树漂移三层校验（RuntimeId 找回 / type,name / 矩形 25%）fail-closed</text>
   <text x="40" y="500" fill="#c6cfdb" font-size="11.5">⑥ pid 白名单（strict/宽松）即时生效　⑦ a11y 策略注入前预判拒绝（action_sent=false）　⑧ 审计 JSONL 可回放追责</text>

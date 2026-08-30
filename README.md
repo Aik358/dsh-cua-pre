@@ -2,8 +2,8 @@
 
 # 🖥️ dsh-cua-pre
 
-**Computer Use for DeepSeek Harness — aligned with zcode-cua**
-**DeepSeek Harness 电脑控制插件 — 与 ZCode Computer Use 逐层对齐**
+**Computer Use for DeepSeek Harness — accessibility-first desktop automation**
+**DeepSeek Harness 电脑控制插件 — 无障碍优先的桌面自动化**
 
 [![npm version](https://img.shields.io/npm/v/@a9i5k4/dsh-cua-pre.svg)](https://www.npmjs.com/package/@a9i5k4/dsh-cua-pre)
 [![license](https://img.shields.io/npm/l/@a9i5k4/dsh-cua-pre.svg)](./LICENSE)
@@ -25,7 +25,7 @@ English | [中文](#中文)
 
 ## What is this
 
-A self-built computer-use plugin for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) that mirrors the architecture of ZCode's built-in Computer Use connector: an **accessibility-first** observe → act → verify loop, the same 30 tool names, the same safety semantics — reimplemented on a Windows Python worker instead of a closed-source native helper.
+A self-built computer-use plugin for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness): an **accessibility-first** observe → act → verify loop with 30 desktop-automation tools (the same names you'd expect from an industry-standard Computer Use toolset), full safety semantics, reimplemented on a Windows Python worker.
 
 The agent operates your desktop the way a careful human would: it **reads the UI Automation tree first** (exact, focus-free, resolution-independent) and only falls back to pixel coordinates when the tree cannot express a target. Screenshots are a describing aid, never the operating premise.
 
@@ -37,7 +37,7 @@ The agent operates your desktop the way a careful human would: it **reads the UI
 
 ## Highlights
 
-- **30 same-named tools** — `get_app_state` / `left_click` / `type` / `key` / `scroll` / `screenshot` / `zoom` / `clipboard` … same names, same argument shapes as zcode-cua (`element`/`coordinate` dual targets, `auto`/`a11y`/`event` strategy routing, `return_state`).
+- **30 tools, standard names** — `get_app_state` / `left_click` / `type` / `key` / `scroll` / `screenshot` / `zoom` / `clipboard` … with `element`/`coordinate` dual targets, `auto`/`a11y`/`event` strategy routing, and `return_state`.
 - **Safety semantics ported, not improvised** — observations are invalidated after every mutation (`superseded` + refresh lock); timeouts mean *"may have happened"* and are never replayed blindly; `stop_computer_control` is a **persistent** kill switch; element addressing validates RuntimeId / type+name / rect drift and fails closed (`stale_tree`) instead of clicking the wrong thing.
 - **Presentation layer** — tool calls render as chat cards; a fixed floating panel shows the live operation feed and a wall of captured frames; a dedicated settings page with **environment auto-detection** (Python candidates probed for real, one-click dependency install, bundled worker auto-resolve, vision-model dropdown with heuristic vision flags).
 - **Tiled vision for small-resolution models** — screenshots are grid-tiled (≤768 px per tile, overlap, capped count) so DeepSeek-flash-class models can still read the screen; full-frame and per-tile caches make repeated looks nearly free; images travel as durable attachment refs, never base64 in text.
@@ -93,7 +93,7 @@ Install worker deps for the chosen interpreter: `pip install uiautomation pillow
 
 </details>
 
-## Tools — 30, same names as zcode-cua
+## Tools — 30 desktop-automation tools
 
 | Group | Tools |
 |---|---|
@@ -140,7 +140,7 @@ All tests are strictly read-only on the desktop — no test ever injects input.
 
 ## 中文
 
-把 ZCode Computer Use 的完整控制面移植到 DeepSeek Harness 的自研插件：**30 个同名工具**（元素/坐标双目标、auto/a11y/event 策略路由、return_state）、无障碍树优先的观察-动作-验证回路、写后作废与禁重放安全语义、持久急停开关、RuntimeId+矩形漂移双层防错位、对话卡片 + 右下角悬浮面板（实况/画面）+ 环境自动检测设置页、面向低分辨率模型的分块识图（全帧/分块两级缓存）、JSONL 审计落盘与 pid 白名单。
+面向 DeepSeek Harness 的桌面自动化自研插件：**30 个标准工具**（元素/坐标双目标、auto/a11y/event 策略路由、return_state）、无障碍树优先的观察-动作-验证回路、写后作废与禁重放安全语义、持久急停开关、RuntimeId+矩形漂移双层防错位、对话卡片 + 右下角悬浮面板（实况/画面）+ 环境自动检测设置页、面向低分辨率模型的分块识图（全帧/分块两级缓存）、JSONL 审计落盘与 pid 白名单。
 
 安装与启用见顶部一条命令；仅在 Windows 10+ 可用；默认关闭。安全机制一览见 [Safety model](#safety-model)。
 
