@@ -890,8 +890,17 @@ def semantic_invoke(ctrl, action):
     return None
 
 
+def _window_is_foreground(ctrl):
+    try:
+        fg = user32.GetForegroundWindow()
+        return fg and _pid_from_hwnd(fg) == int(ctrl.ProcessId)
+    except Exception:
+        return False
+
+
 def element_action(sel, path, action='click', value=None, expect_t=None, expect_n=None,
-                   button='left', double=False, modifiers=None, expect_rid=None, expect_rect=None):
+                   button='left', double=False, modifiers=None, expect_rid=None, expect_rect=None,
+                   allow_focus=True):
     auto = _ensure_uia()
     ctrl, rid_recovered = resolve_element(sel, path, expect_t, expect_n, expect_rid, expect_rect)
     used = []
@@ -902,6 +911,11 @@ def element_action(sel, path, action='click', value=None, expect_t=None, expect_
         if strat:
             return {'ok': True, 'strategy': ['semantic:' + strat]}
         cx, cy, rect = element_center(ctrl)
+        if not allow_focus and not _window_is_foreground(ctrl):
+            # 后台优先：语义 Invoke 不可用且窗口不在前台 → 拒绝物理点击（会点到错误窗口/抢焦点）
+            raise OpError('needs_foreground',
+                          '语义动作不可用且目标窗口不在前台；物理点击需要前台。'
+                          '重试时传 allowFocus=true（会置前窗口），或改用键盘/Value 语义。')
         try:
             ctrl.SetFocus()
         except Exception:
@@ -937,6 +951,21 @@ def element_action(sel, path, action='click', value=None, expect_t=None, expect_
         mouse_click(cx, cy)  # 光标落点=插入点
         type_text(text)
         return {'ok': True, 'strategy': ['focus+click+unicode'], 'point': [cx, cy]}
+    if action == 'scroll':
+        direction = 'down' if (value or 'down') == 'down' else 'up'
+        amount = 3
+        try:
+            pat = ctrl.GetScrollPattern()
+            vert = pat.VerticalScrollPercent
+            if direction == 'down':
+                pat.Scroll(0, max(1, min(10, amount)))
+            else:
+                pat.Scroll(0, -max(1, min(10, amount)))
+            used.append('scrollpattern')
+            return {'ok': True, 'strategy': used, 'vertBefore': vert}
+        except Exception:
+            used.append('scrollpattern-unavailable')
+            raise OpError('needs_foreground', '该控件不支持 ScrollPattern 后台滚动；请用坐标滚轮（需前台）。')
     if action == 'focus':
         try:
             ctrl.SetFocus()
@@ -983,6 +1012,10 @@ def select_text_kb(sel, path, text_range=None, expect_t=None, expect_n=None,
         if _select_text_textpattern(ctrl, start, length):
             return {'ok': True, 'strategy': ['textpattern:%d+%d' % (start, length)]}
         cx, cy, rect = element_center(ctrl)
+        if not allow_focus and not _window_is_foreground(ctrl):
+            raise OpError('needs_foreground',
+                          '文本插入需要键盘焦点；目标窗口不在前台。重试传 allowFocus=true，'
+                          '或对表单控件改用 setvalue（ValuePattern 可后台）。')
         try:
             ctrl.SetFocus()
         except Exception:
@@ -1156,13 +1189,15 @@ def dispatch(op, payload):
                               double=bool(payload.get('double')),
                               modifiers=payload.get('modifiers'),
                               expect_rid=payload.get('expectRid'),
-                              expect_rect=payload.get('expectRect'))
+                              expect_rect=payload.get('expectRect'),
+                              allow_focus=bool(payload.get('allowFocus', True)))
     if op == 'select_text':
         return select_text_kb(payload.get('sel') or {}, payload.get('path') or [],
                               text_range=payload.get('textRange'),
                               expect_t=payload.get('expectT'), expect_n=payload.get('expectN'),
                               expect_rid=payload.get('expectRid'),
-                              expect_rect=payload.get('expectRect'))
+                              expect_rect=payload.get('expectRect'),
+                              allow_focus=bool(payload.get('allowFocus', True)))
     if op == 'hit_click':
         return hit_test_click(int(payload['x']), int(payload['y']),
                               button=payload.get('button') or 'left',

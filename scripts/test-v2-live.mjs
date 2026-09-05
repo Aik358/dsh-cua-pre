@@ -40,7 +40,7 @@ const routeByPath = Object.fromEntries(routes.map((r) => [r.path, r]))
 const ok = (cond, label) => { console.log((cond ? '[ok] ' : '[FAIL] ') + label); if (!cond) process.exit(1) }
 
 // [0] 路由注册
-ok(routes.length === 6, 'webServer 路由 x6: ' + routes.map((r) => r.path.split('/').pop()).join(','))
+ok(routes.length === 11, 'webServer 路由 x6: ' + routes.map((r) => r.path.split('/').pop()).join(','))
 
 // [1] SKILL 化 GUIDANCE
 const g = sectionText()
