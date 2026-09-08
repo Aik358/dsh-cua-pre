@@ -10,6 +10,7 @@
 [![platform](https://img.shields.io/badge/platform-Windows%2010%2B-0078d4.svg)](#requirements--环境要求)
 [![python](https://img.shields.io/badge/python-3.9%2B-3776ab.svg)](#requirements--环境要求)
 [![tools](https://img.shields.io/badge/tools-30-8a63ff.svg)](#tools--工具一览)
+[![QQ group](https://img.shields.io/badge/QQ%E7%BE%A4-%E4%BA%A4%E6%B5%81%E7%BE%A4-eb1923.svg)](https://qm.qq.com/q/v7Asxn6vPa)
 
 **One command install · 一条命令安装**
 
@@ -22,6 +23,8 @@ irm https://raw.githubusercontent.com/Aik358/dsh-cua-pre/main/install.ps1 | iex
 ---
 
 English | [中文](#中文)
+
+**Feedback & chat:** join the community QQ group — [Join the dsh-cua-pre group](https://qm.qq.com/q/v7Asxn6vPa) — bug reports, usage tips, and quick responses faster than GitHub issues.
 
 ## What is this
 
@@ -143,6 +146,8 @@ All tests are strictly read-only on the desktop — no test ever injects input.
 面向 DeepSeek Harness 的桌面自动化自研插件：**30 个标准工具**（元素/坐标双目标、auto/a11y/event 策略路由、return_state）、无障碍树优先的观察-动作-验证回路、写后作废与禁重放安全语义、持久急停开关、RuntimeId+矩形漂移双层防错位、对话卡片 + 右下角悬浮面板（实况/画面）+ 环境自动检测设置页、面向低分辨率模型的分块识图（全帧/分块两级缓存）、JSONL 审计落盘与 pid 白名单。
 
 安装与启用见顶部一条命令；仅在 Windows 10+ 可用；默认关闭。安全机制一览见 [Safety model](#safety-model)。
+
+**反馈与交流：** 欢迎加入 QQ 交流群 —— [点此加入「电脑控制」交流群](https://qm.qq.com/q/v7Asxn6vPa) —— 问题反馈、使用技巧、快速答疑，比 GitHub issue 更及时。
 
 ## License
 
